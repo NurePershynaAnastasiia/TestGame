@@ -6,7 +6,11 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "MyCharacter.generated.h"
 
+// Forward declaration
 class AItemActor;
+class USphereComponent;
+class UWidgetComponent;
+class UUserWidget;
 
 UCLASS()
 class TESTGAME_API AMyCharacter : public ACharacter
@@ -20,52 +24,60 @@ public:
 
 protected:
     virtual void BeginPlay() override;
-
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+    // === Movement ===
     void MoveForward(float Value);
     void MoveRight(float Value);
     void JumpPressed();
     void JumpReleased();
+
+    // === Spawning ===
     void SpawnCube();
 
     UFUNCTION(Server, Reliable)
     void Server_SpawnCube();
 
+    // === Interaction ===
     void Pickup();
-
     AItemActor* GetOverlappingItem();
-
     AItemActor* GetLookedAtItem();
 
     UFUNCTION(Server, Reliable)
     void Server_PickupItem(AItemActor* Item);
 
+    // === Inventory Replication ===
     UFUNCTION()
     void OnRep_InventoryChanged();
 
-    UPROPERTY(ReplicatedUsing = OnRep_InventoryChanged)
-    TArray<FString> Inventory;
+    UFUNCTION(NetMulticast, Reliable)
+    void Multicast_UpdateInventoryWidget();
 
 public:
-    AItemActor* OverlappedItem;
-
-    UPROPERTY(EditDefaultsOnly, Category = "Spawn")
-    TSubclassOf<AActor> MeshToSpawn;
+    // === Components ===
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
+    USpringArmComponent* SpringArm;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
-    class USpringArmComponent* SpringArm;
+    UCameraComponent* Camera;
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
-    class UCameraComponent* Camera;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory")
+    UWidgetComponent* InventoryWidget;
 
     UPROPERTY(VisibleAnywhere)
-    class UWidgetComponent* InventoryWidget;
+    USphereComponent* InteractionSphere;
+
+    // === Inventory ===
+    UPROPERTY(ReplicatedUsing = OnRep_InventoryChanged)
+    TArray<FString> Inventory;
 
     UPROPERTY(EditDefaultsOnly)
     TSubclassOf<UUserWidget> WBP_InventoryClass;
 
-    UPROPERTY(VisibleAnywhere)
-    class USphereComponent* InteractionSphere;
+    // === Spawning Settings ===
+    UPROPERTY(EditDefaultsOnly, Category = "Spawn")
+    TSubclassOf<AActor> MeshToSpawn;
 
+    // === State ===
+    AItemActor* OverlappedItem;
 };

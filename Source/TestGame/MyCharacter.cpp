@@ -53,15 +53,18 @@ void AMyCharacter::BeginPlay()
         PC->PlayerCameraManager->ViewPitchMax = 45.f;
     }
 
-    if (IsLocallyControlled())
+    if (HasAuthority() && InventoryWidget)
+    {
+        InventoryWidget->SetIsReplicated(true);
+    }
+
+    if (InventoryWidget && WBP_InventoryClass)
     {
         InventoryWidget->SetWidgetClass(WBP_InventoryClass);
-        InventoryWidget->SetVisibility(true);
+        InventoryWidget->InitWidget();
     }
-    else
-    {
-        InventoryWidget->SetVisibility(false);
-    }
+
+    Multicast_UpdateInventoryWidget();
 }
 
 void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -174,7 +177,7 @@ void AMyCharacter::Server_PickupItem_Implementation(AItemActor* Item)
     {
         Inventory.Add(Item->ItemName);
 
-        OnRep_InventoryChanged();
+        Multicast_UpdateInventoryWidget();
 
         Item->Destroy();
     }
@@ -282,4 +285,25 @@ void AMyCharacter::Tick(float DeltaTime)
         }
     }
 }
+
+void AMyCharacter::Multicast_UpdateInventoryWidget_Implementation()
+{
+    if (!InventoryWidget || !InventoryWidget->GetUserWidgetObject())
+        return;
+
+    UUserWidget* Widget = InventoryWidget->GetUserWidgetObject();
+
+    UTextBlock* InventoryText = Cast<UTextBlock>(Widget->GetWidgetFromName(TEXT("InventoryText")));
+    if (!InventoryText)
+        return;
+
+    FString CombinedText;
+    for (const FString& Item : Inventory)
+    {
+        CombinedText += Item + TEXT("\n");
+    }
+
+    InventoryText->SetText(FText::FromString(CombinedText));
+}
+
 
