@@ -32,7 +32,6 @@ AMyCharacter::AMyCharacter()
     InventoryWidget->SetupAttachment(RootComponent);
     InventoryWidget->SetRelativeLocation(FVector(0.f, 0.f, 120.f));
     InventoryWidget->SetWidgetSpace(EWidgetSpace::Screen);
-    InventoryWidget->SetDrawSize(FVector2D(250.f, 100.f));
 
     InteractionSphere = CreateDefaultSubobject<USphereComponent>(TEXT("InteractionSphere"));
     InteractionSphere->SetupAttachment(RootComponent);
@@ -120,40 +119,40 @@ void AMyCharacter::JumpReleased()
 
 void AMyCharacter::SpawnCube()
 {
-    if (HasAuthority())
-    {
-        FVector Forward = GetActorForwardVector();
-        FVector Up = GetActorUpVector();
-        FVector SpawnLocation = GetActorLocation() + Forward * 200.f + Up * 50.f;
-
-        FRotator SpawnRotation = GetActorRotation();
-
-        DrawDebugBox(GetWorld(), SpawnLocation, FVector(20, 20, 20), FColor::Red, false, 5.f);
-
-        FActorSpawnParameters Params;
-        Params.Owner = this;
-
-        if (MeshToSpawn)
-        {
-            GetWorld()->SpawnActor<AActor>(MeshToSpawn, SpawnLocation, SpawnRotation, Params);
-        }
-    }
-    else
-    {
-        Server_SpawnCube();
-    }
+    Server_SpawnCube();
 
     UE_LOG(LogTemp, Warning, TEXT("SpawnCube called. Role: %s, HasAuthority: %s"),
         *UEnum::GetValueAsString(GetLocalRole()),
         HasAuthority() ? TEXT("true") : TEXT("false"));
-
 }
 
 void AMyCharacter::Server_SpawnCube_Implementation()
 {
-    SpawnCube();
+    FVector Forward = GetActorForwardVector();
+    FVector Up = GetActorUpVector();
+    FVector SpawnLocation = GetActorLocation() + Forward * 200.0f + Up * 50.0f;
+    FRotator SpawnRotation = GetActorRotation();
 
-    UE_LOG(LogTemp, Warning, TEXT("Server_SpawnCube_Implementation called"));
+    FActorSpawnParameters SpawnParams;
+    SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+    AActor* SpawnedActor = GetWorld()->SpawnActor<AActor>(MeshToSpawn, SpawnLocation, SpawnRotation, SpawnParams);
+    if (SpawnedActor)
+    {
+        SpawnedActor->SetOwner(this);
+
+        if (AController* PC = GetController())
+        {
+            SpawnedActor->SetInstigator(this);
+        }
+
+        UStaticMeshComponent* CubeMesh = SpawnedActor->FindComponentByClass<UStaticMeshComponent>();
+        if (CubeMesh && CubeMesh->IsSimulatingPhysics())
+        {
+            FVector ForwardImpulse = GetActorForwardVector() * 1000.0f;
+            CubeMesh->AddImpulse(ForwardImpulse, NAME_None, true);
+        }
+    }
 }
 
 void AMyCharacter::Pickup()
@@ -191,8 +190,6 @@ AItemActor* AMyCharacter::GetLookedAtItem()
     FHitResult Hit;
     FCollisionQueryParams Params;
     Params.AddIgnoredActor(this);
-
-    DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 2.f, 0, 1.f);
 
     if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params))
     {
