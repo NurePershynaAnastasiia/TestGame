@@ -130,28 +130,17 @@ void AMyCharacter::Server_SpawnCube_Implementation()
 {
     FVector Forward = GetActorForwardVector();
     FVector Up = GetActorUpVector();
-    FVector SpawnLocation = GetActorLocation() + Forward * 200.0f + Up * 50.0f;
+    FVector SpawnLocation = GetActorLocation() + Forward * 200.f + Up * 50.f;
     FRotator SpawnRotation = GetActorRotation();
 
     FActorSpawnParameters SpawnParams;
     SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+    SpawnParams.Owner = this;
 
-    AActor* SpawnedActor = GetWorld()->SpawnActor<AActor>(MeshToSpawn, SpawnLocation, SpawnRotation, SpawnParams);
-    if (SpawnedActor)
+    APhysicalCubeActor* SpawnedCube = GetWorld()->SpawnActor<APhysicalCubeActor>(MeshToSpawn, SpawnLocation, SpawnRotation, SpawnParams);
+    if (SpawnedCube)
     {
-        SpawnedActor->SetOwner(this);
-
-        if (AController* PC = GetController())
-        {
-            SpawnedActor->SetInstigator(this);
-        }
-
-        UStaticMeshComponent* CubeMesh = SpawnedActor->FindComponentByClass<UStaticMeshComponent>();
-        if (CubeMesh && CubeMesh->IsSimulatingPhysics())
-        {
-            FVector ForwardImpulse = GetActorForwardVector() * 1000.0f;
-            CubeMesh->AddImpulse(ForwardImpulse, NAME_None, true);
-        }
+        SpawnedCube->SetImpulseDirection(Forward);
     }
 }
 

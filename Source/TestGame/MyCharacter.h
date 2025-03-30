@@ -4,6 +4,7 @@
 #include "GameFramework/Character.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "PhysicalCubeActor.h"
 #include "MyCharacter.generated.h"
 
 // Forward declaration
@@ -76,7 +77,7 @@ public:
 
     // === Spawning Settings ===
     UPROPERTY(EditDefaultsOnly, Category = "Spawn")
-    TSubclassOf<AActor> MeshToSpawn;
+    TSubclassOf<APhysicalCubeActor> MeshToSpawn;
 
     // === State ===
     AItemActor* OverlappedItem;
