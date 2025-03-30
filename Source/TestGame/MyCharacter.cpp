@@ -81,6 +81,9 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
     PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
 
     PlayerInputComponent->BindAction("Pickup", IE_Pressed, this, &AMyCharacter::Pickup);
+
+    PlayerInputComponent->BindAction("ToggleMenu", IE_Pressed, this, &AMyCharacter::ToggleSettingsMenu);
+
 }
 
 void AMyCharacter::MoveForward(float Value)
@@ -292,4 +295,39 @@ void AMyCharacter::Multicast_UpdateInventoryWidget_Implementation()
     InventoryText->SetText(FText::FromString(CombinedText));
 }
 
+void AMyCharacter::ToggleSettingsMenu()
+{
+    APlayerController* PC = Cast<APlayerController>(GetController());
+    if (!PC || !SettingsMenuClass) return;
+
+    if (!SettingsMenuInstance)
+    {
+        SettingsMenuInstance = CreateWidget<UUserWidget>(GetWorld(), SettingsMenuClass);
+    }
+
+    if (bIsSettingsMenuVisible)
+    {
+        if (SettingsMenuInstance && SettingsMenuInstance->IsInViewport())
+        {
+            SettingsMenuInstance->RemoveFromParent();
+        }
+
+        PC->bShowMouseCursor = false;
+        PC->SetInputMode(FInputModeGameAndUI());
+    }
+    else
+    {
+        if (SettingsMenuInstance && !SettingsMenuInstance->IsInViewport())
+        {
+            SettingsMenuInstance->AddToViewport();
+        }
+
+        PC->bShowMouseCursor = true;
+
+        FInputModeUIOnly InputMode;
+        InputMode.SetWidgetToFocus(SettingsMenuInstance->TakeWidget());
+        InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+        PC->SetInputMode(FInputModeGameAndUI());
+    }
+}
 

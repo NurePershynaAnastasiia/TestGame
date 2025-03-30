@@ -54,6 +54,14 @@ protected:
     UFUNCTION(NetMulticast, Reliable)
     void Multicast_UpdateInventoryWidget();
 
+    // === Interpolation ===
+    UPROPERTY()
+    UUserWidget* SettingsMenuInstance;
+
+    bool bIsSettingsMenuVisible = false;
+
+    void ToggleSettingsMenu();
+
 public:
     // === Components ===
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
@@ -81,4 +89,8 @@ public:
 
     // === State ===
     AItemActor* OverlappedItem;
+
+    // === Interpolation ===
+    UPROPERTY(EditDefaultsOnly, Category = "UI")
+    TSubclassOf<UUserWidget> SettingsMenuClass;
 };
