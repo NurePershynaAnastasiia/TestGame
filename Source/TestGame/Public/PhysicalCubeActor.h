@@ -18,6 +18,8 @@ public:
 
     virtual void Tick(float DeltaTime) override;
 
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 protected:
     virtual void BeginPlay() override;
 
@@ -34,4 +36,11 @@ private:
     FVector TargetLocation;
 
     float InterpSpeed = 5.0f;
+
+    UPROPERTY(ReplicatedUsing = OnRep_ServerPosition)
+    FVector ServerPosition;
+
+    UFUNCTION()
+    void OnRep_ServerPosition();
+
 };
